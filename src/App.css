@@ -1,0 +1,19 @@
+.login {
+  margin-top: 200px;
+}
+.align-center {
+  text-align: center;
+}
+
+button {
+  background-color: #660033 !important;
+  color: #ffffff !important;
+  border: 1px solid #660033 !important;
+}
+
+.form-control {
+  height: 50px !important;
+}
+.pd-40 {
+  padding: 40px;
+}
