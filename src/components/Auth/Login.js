@@ -1,157 +1,160 @@
-import { Component, useState } from "react";
-import { Form, Button, Container, Row, Col } from "react-bootstrap";
+import React, { Component, useEffect, useState } from "react";
+import { Form, Button, Container, Row, Col, Alert } from "react-bootstrap";
+import { Redirect, useLocation } from "react-router-dom";
 import Slider from "./Carousel";
+import { authActions } from "../../actions/authActions";
+import { sliderActions } from "../../actions/sliderAction";
+import { commonActions } from "../../actions/commonAction";
+import { useDispatch, useSelector } from "react-redux";
+import Loader from "../Loader";
 
-async function loginUser(credential) {
-  return fetch("http://localhost:8080/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(credential),
-  }).then((data) => {
-    return data.json();
+function Login() {
+  const [inputs, setInputs] = useState({
+    email: "",
+    password: "",
   });
-}
 
-const handleSubmit = async (e) => {
-  console.log(props);
-  //   e.preventDefault();
-  //   const token = await loginUser({
-  //     username,
-  //     password,
-  //   });
-  //   setToken(token);
-};
+  const [errors, setError] = useState({
+    emailErr: "",
+    passwordErr: "",
+  });
+  const touched = false;
+  const { email, password } = inputs;
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const alert = useSelector((state) => state.alertReducer);
+  let sliders = [];
 
-class Login extends Component {
-  constructor(props) {
-    super(props);
+  useEffect(() => {
+    dispatch(sliderActions.slider());
+  }, [dispatch]);
 
-    this.state = {
-      firstName: "",
-      lastName: "",
+  sliders = useSelector((state) => state.slider);
+  useEffect(() => {
+    sliders = sliders.data;
+  }, [sliders]);
+
+  const langCode = useSelector((state) => state.langReducer.lang);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (validate()) {
+      setError({
+        ...errors,
+        emailErr: "",
+        passwordErr: "",
+      });
+      const { from } = location.state || { from: { pathname: "/" } };
+      dispatch(authActions.login(email, password, from));
+    }
+  }
+
+  function validate() {
+    let isValid = true;
+    let errors = {
+      emailErr: "",
+      passwordErr: "",
     };
-    this.handleSubmit = this.handleSubmit.bind(props);
-    this.handleFormChange = this.handleFormChange.bind(this);
-    // this.handleSubmit = this.handleSubmit.bind(this);
-  }
 
-  handleFormChange(event) {
-    const targetV = event.target;
-    const value = targetV.value;
-    const name = targetV.name;
-    this.setState({
-      [name]: value,
+    if (inputs.email == "") {
+      isValid = false;
+      errors.emailErr = "Please enter email";
+    }
+
+    if (inputs.password == "") {
+      isValid = false;
+      errors.passwordErr = "Please enter password";
+    }
+
+    setError({
+      ...errors,
+      emailErr: errors.emailErr,
+      passwordErr: errors.passwordErr,
     });
+
+    return isValid;
   }
 
-  render() {
-    return (
-      <Container fluid>
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setInputs((inputs) => ({ ...inputs, [name]: value }));
+  }
+
+  function langChange(e) {
+    dispatch(commonActions.changeLang(e.target.value));
+    /* console.log(e.target.value); */
+  }
+
+  return (
+    <Container fluid>
+      {sliders.loading && <Loader />}
+      {!sliders.loading && (
         <Row>
           <Col md={7}>
-            <Slider />
+            <Slider slider={sliders} langCode={langCode} />
           </Col>
-          <Col className="login" md={5}>
-            <h1 class="align-center">Login</h1>
-            <Form onSubmit={handleSubmit} className="pd-40">
-              <Row>
-                <Col>
-                  <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Label>Email address</Form.Label>
-                    <Form.Control
-                      type="email"
-                      placeholder="Enter email"
-                      onChange={this.handleFormChange}
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-              <Row>
-                <Col>
-                  <Form.Group className="mb-3" controlId="formBasicPassword">
-                    <Form.Label>Password</Form.Label>
-                    <Form.Control
-                      type="password"
-                      placeholder="Password"
-                      onChange={this.handleFormChange}
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-              <Row>
-                <Col className="align-center">
+          <Col md={5}>
+            <div className="align-right">
+              <form className="langName pd-40 ">
+                <select
+                  name="lang"
+                  onChange={langChange}
+                  className="form-control wd-100"
+                  value={langCode}
+                >
+                  <option value="en">EN</option>
+                  <option value="fr">FR</option>
+                </select>
+              </form>
+            </div>
+            {alert && alert.message && (
+              <Alert key="0" variant={alert.type}>
+                {alert.message}
+              </Alert>
+            )}
+            <div className="login">
+              <h1 className="align-center">Login</h1>
+
+              <form onSubmit={handleSubmit} className="pd-40">
+                <div className="form-group">
+                  <label>Email Address:</label>
+                  <input
+                    type="text"
+                    name="email"
+                    value={email}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="Enter email"
+                    id="email"
+                  />
+
+                  <div className="text-danger">{errors.emailErr}</div>
+                </div>
+                <div className="form-group">
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={password}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="Enter password"
+                    id="password"
+                  />
+                  <div className="text-danger">{errors.passwordErr}</div>
+                </div>
+                <div className="form-group align-center">
                   <Button variant="primary" type="submit" size="lg">
                     Submit
                   </Button>
-                </Col>
-              </Row>
-            </Form>
+                </div>
+              </form>
+            </div>
           </Col>
         </Row>
-      </Container>
-    );
-  }
+      )}
+    </Container>
+  );
 }
 
 export default Login;
-
-// function Login({ setToken }) {
-//   const [username, setUserName] = useState();
-//   const [password, setPassword] = useState();
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     const token = await loginUser({
-//       username,
-//       password,
-//     });
-//     setToken(token);
-//   };
-//   return (
-//     <Container fluid>
-//       <Row>
-//         <Col md={7}>
-//           <Slider />
-//         </Col>
-//         <Col className="login" md={5}>
-//           <h1 class="align-center">Login</h1>
-//           <Form onSubmit={handleSubmit} className="pd-40">
-//             <Row>
-//               <Col>
-//                 <Form.Group className="mb-3" controlId="formBasicEmail">
-//                   <Form.Label>Email address</Form.Label>
-//                   <Form.Control
-//                     type="email"
-//                     placeholder="Enter email"
-//                     onChange={(e) => setUserName(e.target.value)}
-//                   />
-//                 </Form.Group>
-//               </Col>
-//             </Row>
-//             <Row>
-//               <Col>
-//                 <Form.Group className="mb-3" controlId="formBasicPassword">
-//                   <Form.Label>Password</Form.Label>
-//                   <Form.Control
-//                     type="password"
-//                     placeholder="Password"
-//                     onChange={(e) => setPassword(e.target.value)}
-//                   />
-//                 </Form.Group>
-//               </Col>
-//             </Row>
-//             <Row>
-//               <Col className="align-center">
-//                 <Button variant="primary" type="submit" size="lg">
-//                   Submit
-//                 </Button>
-//               </Col>
-//             </Row>
-//           </Form>
-//         </Col>
-//       </Row>
-//     </Container>
-//   );
-// }

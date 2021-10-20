@@ -3,30 +3,48 @@ import "./App.css";
 import Home from "./components/Home/Home";
 import Product from "./components/Product/Product";
 import Login from "./components/Auth/Login";
-import { Switch, BrowserRouter, Route } from "react-router-dom";
+import { Switch, Router, Route, Redirect } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { React, useState } from "react";
-import useToken from "./components/Auth/useToken";
+import { PrivateRoute } from "./components/Auth/PrivateComponent";
+import { history } from "../src/helper/history";
+import { useDispatch, useSelector } from "react-redux";
+import { ProductDetail } from "./components/Product/ProductDetail";
 
 function App() {
-  const { token, setToken } = useToken();
+  const token = useSelector((state) => state.loginReducer.token);
 
-  if (!token) {
-    return <Login setToken={setToken} />;
-  }
   return (
     <div className="App">
-      <header className="App-header">In header</header>
-      <BrowserRouter>
+      <Router history={history}>
         <Switch>
-          <Route path="/home">
-            <Home />
+          <Route exact path="/login">
+            <Login />
           </Route>
-          <Route path="/product">
-            <Product />
-          </Route>
+          <PrivateRoute
+            exact
+            path="/"
+            component={Home}
+            token={token}
+          ></PrivateRoute>
+          <PrivateRoute
+            path="/home"
+            component={Home}
+            token={token}
+          ></PrivateRoute>
+          <PrivateRoute
+            exact
+            path="/product"
+            component={Product}
+            token={token}
+          ></PrivateRoute>
+          <PrivateRoute
+            path="/product/:id"
+            component={ProductDetail}
+            token={token}
+          ></PrivateRoute>
         </Switch>
-      </BrowserRouter>
+      </Router>
     </div>
   );
 }
